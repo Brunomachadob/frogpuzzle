@@ -10,13 +10,12 @@ const val MAX_STEPS = 20
 const val SIMULATIONS = 1000
 
 const val THREADS = 20
-val executor: ExecutorService = Executors.newFixedThreadPool(THREADS)
 
 fun main() {
-//    SessionPrefs.RENDER_BACKEND = Docker()
+    val executor: ExecutorService = Executors.newFixedThreadPool(THREADS)
 
-    val summaries = (1..MAX_STEPS).map {
-        val simulations = List(SIMULATIONS) { Simulation(it) }
+    val averageByStep = (1..MAX_STEPS).map { step ->
+        val simulations = List(SIMULATIONS) { Simulation(step) }
 
         val average = executor
             .invokeAll(simulations)
@@ -24,12 +23,16 @@ fun main() {
             .mapToInt { future -> future.get() }
             .summaryStatistics().average
 
-        Pair(it, average)
+        println("$step  $average")
+
+        Pair(step, average)
     }
 
     executor.shutdown()
 
-    summaries.plot( x = { first }, y = { second })
+    SessionPrefs.RENDER_BACKEND = Docker()
+
+    averageByStep.plot( x = { first }, y = { second })
         .geomCol()
         .xLabel("Steps")
         .yLabel("Average Jumps")
